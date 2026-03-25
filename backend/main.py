@@ -41,9 +41,15 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created")
 
-    # Seed sample data in DEMO_MODE
-    if os.getenv("DEMO_MODE", "true").lower() == "true":
-        await seed_sample_data()
+    # Seed sample data in DEMO_MODE (disabled by default to avoid startup crashes)
+    # Set environment variable DEMO_MODE=true to enable explicitly.
+    if os.getenv("DEMO_MODE", "false").lower() == "true":
+        try:
+            await seed_sample_data()
+        except Exception as e:
+            print(f"⚠️  Sample data seeding raised an exception but startup will continue: {e}")
+            import traceback
+            traceback.print_exc()
 
     print("\n" + "="*60)
     print("  🚀 NEXUS is running — open http://localhost:5173")
@@ -100,10 +106,16 @@ app = FastAPI(
 )
 
 # CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+cors_env = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174",
+)
+# Parse and trim any values from the environment variable
+cors_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,  # explicit origins from env (defaults include 5173 and 5174)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

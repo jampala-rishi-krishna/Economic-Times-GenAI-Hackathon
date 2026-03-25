@@ -29,25 +29,30 @@ async def list_tasks(
     limit: int = 200,
     db: Session = Depends(get_db)
 ):
-    tasks = crud.get_tasks(db, meeting_id=meeting_id, status=status,
-                           assignee=assignee, skip=skip, limit=limit)
-    return [
-        {
-            "id": t.id, "meeting_id": t.meeting_id, "decision_id": t.decision_id,
-            "title": t.title, "description": t.description,
-            "assigned_to": t.assigned_to, "assigned_by": t.assigned_by,
-            "priority": t.priority, "status": t.status,
-            "due_date": t.due_date.isoformat() if t.due_date else None,
-            "created_at": t.created_at.isoformat(),
-            "updated_at": t.updated_at.isoformat(),
-            "escalation_count": t.escalation_count,
-            "stall_detected_at": t.stall_detected_at.isoformat() if t.stall_detected_at else None,
-            "completed_at": t.completed_at.isoformat() if t.completed_at else None,
-            "assignment_rationale": t.assignment_rationale,
-            "context_quote": t.context_quote,
-            "is_human_override": t.is_human_override
-        } for t in tasks
-    ]
+    try:
+        tasks = crud.get_tasks(db, meeting_id=meeting_id, status=status,
+                               assignee=assignee, skip=skip, limit=limit)
+        return [
+            {
+                "id": t.id, "meeting_id": t.meeting_id, "decision_id": t.decision_id,
+                "title": t.title, "description": t.description,
+                "assigned_to": t.assigned_to, "assigned_by": t.assigned_by,
+                "priority": t.priority, "status": t.status,
+                "due_date": t.due_date.isoformat() if t.due_date else None,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+                "escalation_count": t.escalation_count,
+                "stall_detected_at": t.stall_detected_at.isoformat() if t.stall_detected_at else None,
+                "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+                "assignment_rationale": t.assignment_rationale,
+                "context_quote": t.context_quote,
+                "is_human_override": t.is_human_override
+            } for t in tasks
+        ]
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
 
 @router.put("/{task_id}")
